@@ -11,6 +11,7 @@
 #include "LinkLocalDiscovery.h"
 #include "ConnectionHandler.h"
 #include "Log.h"
+#include "ThreadPool.h"
 
 #include <ev++.h>
 
@@ -65,7 +66,15 @@ int main (int argc, char** argv) {
   ConnectionHandler ch;
   InterfaceHandler ihn(ci, nm, cp, ch);
   PacketHandler phn(nm, ci, cp, ch);
-  for (Transport* tr : transports) tr->onPacket(phn);
+  ThreadPool threads;
+  for (Transport* tr : transports)
+    tr->onPacket(
+        [&phn, &threads](TransportSocket&& ts, std::string&& packet) {
+          std::cout << "Queueing a packet" << std::endl;
+          threads.push([&phn, ts, packet]() {
+            phn(TransportSocket(ts), std::string(packet));
+          });
+        });
   for (Transport* tr : transports) tr->enable();  
 
   LinkLocalDiscovery lld(clients, nm);
