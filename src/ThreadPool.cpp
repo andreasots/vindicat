@@ -1,7 +1,5 @@
 #include "ThreadPool.h"
 
-#include <iostream>
-
 ThreadPool::ThreadPool() {
   for(unsigned i = 0; i < std::thread::hardware_concurrency(); i++)
     _threads.push_back(
@@ -18,13 +16,10 @@ ThreadPool::~ThreadPool() {
 void ThreadPool::push(std::function<void(void)>&& task) {
   std::lock_guard<std::mutex> lock(_mutex);
   _buffer.push(task);
-  std::cout << "notifying... " << std::flush;
   _buffer_not_empty.notify_one();
-  std::cout << "done" << std::endl;
 }
 
 void ThreadPool::worker() {
-  std::cout << "Starting thread " << std::this_thread::get_id() << std::endl;
   std::unique_lock<std::mutex> lock(_mutex);
   while(true) {
     while(_buffer.empty() && !_stopped)
@@ -33,7 +28,6 @@ void ThreadPool::worker() {
     if(_stopped)
       return;
     
-    std::cout << "Thread " << std::this_thread::get_id() << " running." << std::endl;
     _buffer.pop()();
   }
 }

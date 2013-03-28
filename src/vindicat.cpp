@@ -70,7 +70,6 @@ int main (int argc, char** argv) {
   for (Transport* tr : transports)
     tr->onPacket(
         [&phn, &threads](TransportSocket&& ts, std::string&& packet) {
-          std::cout << "Queueing a packet" << std::endl;
           threads.push([&phn, ts, packet]() {
             phn(TransportSocket(ts), std::string(packet));
           });
