@@ -2,7 +2,7 @@
 #include <limits>
 
 std::shared_ptr<Link> Link::
-fromPromise( std::shared_ptr<LinkPromise>&& promise, const NetworkMap& nm) {
+fromPromise( std::shared_ptr<LinkPromise>&& promise, NetworkMap& nm) {
   std::unique_ptr<LinkInfo> info(new LinkInfo());
   if ( ! promise->has_link_info_msg()
     || ! promise->left_sig_algos_size() 

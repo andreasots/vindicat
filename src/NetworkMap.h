@@ -13,6 +13,7 @@ class Link;
 #include <tuple>
 #include <unordered_map>
 #include <set>
+#include <mutex>
 
 typedef std::vector< std::tuple<
       std::shared_ptr<Link>, std::shared_ptr<Device>
@@ -24,7 +25,7 @@ typedef std::vector< std::tuple<
 // 3) Mainain a one-to-one mapping between tsockets and devices behind them
 
 class NetworkMap {
-public:
+ public:
   NetworkMap(std::shared_ptr<Device>&&);
   NetworkMap(const NetworkMap&) = delete;
   const NetworkMap& operator= (const NetworkMap&) = delete;
@@ -32,11 +33,11 @@ public:
   void add(std::shared_ptr<Device>&&);
   bool add(std::shared_ptr<Link>&&);
 
-  std::shared_ptr<Device> device(const std::string&) const;
-  std::shared_ptr<Device> device(const TransportSocket&) const;
-  Device& our_device() const;
-  std::shared_ptr<Link> link_to(const std::string&) const;
-  std::shared_ptr<Link> link_between(const std::string&, const std::string&) const;
+  std::shared_ptr<Device> device(const std::string&);
+  std::shared_ptr<Device> device(const TransportSocket&);
+  Device& our_device();
+  std::shared_ptr<Link> link_to(const std::string&);
+  std::shared_ptr<Link> link_between(const std::string&, const std::string&);
   std::vector< std::shared_ptr<Device> > devices();
   std::vector< std::shared_ptr<Device> > neighbors();
   
@@ -46,10 +47,11 @@ public:
   // Return the links and the respective devices that were added to the map
   // Remove and discard all that we tried to add but had no room for
 
-  Path path_to(const Device&) const;
+  Path path_to(const Device&);
   // Return the "best" path to the specified Device. Empty if none.
 
-private:
+ private:
+  std::mutex _lock;
   lemon::ListGraph _graph;
   lemon::ListGraph::NodeMap<std::shared_ptr<Device> > _g_device;
   lemon::ListGraph::EdgeMap<std::shared_ptr<Link> > _g_link;

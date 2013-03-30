@@ -19,6 +19,8 @@ NetworkMap::NetworkMap(std::shared_ptr<Device>&& our_dev)
   }
 
 void NetworkMap::add(std::shared_ptr<Device>&& dev_p) {
+  std::lock_guard<std::mutex> lock(_lock);
+
   assert(dev_p.unique());
   // Is this device already represented in the network map? Multiple times?
   std::vector<lemon::ListGraph::Node> matching_nodes;
@@ -51,6 +53,7 @@ void NetworkMap::add(std::shared_ptr<Device>&& dev_p) {
 }
 
 bool NetworkMap::add(std::shared_ptr<Link>&& link) {
+  std::lock_guard<std::mutex> lock(_lock);
   lemon::ListGraph::Node left, right;
   {
     auto it = _node_by_id.find( link->left_id() );
@@ -93,24 +96,28 @@ bool NetworkMap::add(std::shared_ptr<Link>&& link) {
 }
 
 std::shared_ptr<Device> NetworkMap::
-device(const TransportSocket& ts) const {
+device(const TransportSocket& ts) {
+  std::lock_guard<std::mutex> lock(_lock);
   auto it = _node_by_socket.find(ts);
   if ( it == _node_by_socket.end() ) return nullptr;
   return _g_device[it->second];
 }
 
-std::shared_ptr<Device> NetworkMap::device(const std::string& id) const {
+std::shared_ptr<Device> NetworkMap::device(const std::string& id) {
+  std::lock_guard<std::mutex> lock(_lock);
   auto it = _node_by_id.find(id);
   if ( it == _node_by_id.end() ) return nullptr;
   return _g_device[it->second];
 }
 
-Device& NetworkMap::our_device() const {
+Device& NetworkMap::our_device() {
+  std::lock_guard<std::mutex> lock(_lock);
   return *_g_device[_our_node];
 }
 
 std::shared_ptr<Link> NetworkMap::link_between(const std::string& l_id,
-                                               const std::string& r_id) const {
+                                               const std::string& r_id) {
+  std::lock_guard<std::mutex> lock(_lock);
   auto l_it = _node_by_id.find(l_id);
   if ( l_it == _node_by_id.end() ) return nullptr;
   auto r_it = _node_by_id.find(r_id);
@@ -120,11 +127,12 @@ std::shared_ptr<Link> NetworkMap::link_between(const std::string& l_id,
   return _g_link[edge];
 }
 
-std::shared_ptr<Link> NetworkMap::link_to(const std::string& id) const {
+std::shared_ptr<Link> NetworkMap::link_to(const std::string& id) {
   return link_between(our_device().id(), id);
 }
 
 std::vector< std::shared_ptr<Device> > NetworkMap::devices() {
+  std::lock_guard<std::mutex> lock(_lock);
   std::vector< std::shared_ptr<Device> > ret;
   for (lemon::ListGraph::NodeIt n(_graph); n != lemon::INVALID; ++n) {
     ret.push_back(_g_device[n]);
@@ -133,6 +141,7 @@ std::vector< std::shared_ptr<Device> > NetworkMap::devices() {
 }
 
 std::vector< std::shared_ptr<Device> > NetworkMap::neighbors() {
+  std::lock_guard<std::mutex> lock(_lock);
   std::vector< std::shared_ptr<Device> > ret;
   for (lemon::ListGraph::IncEdgeIt e(_graph, _our_node); e != lemon::INVALID; ++e) {
     ret.push_back(_g_device[_graph.oppositeNode(_our_node, e)]);
@@ -154,6 +163,7 @@ public:
 };
 
 std::vector<NetworkMap::EdgeWithEnds> NetworkMap::shake() {
+  std::lock_guard<std::mutex> lock(_lock);
   std::vector<NetworkMap::EdgeWithEnds> ret;
   for (const auto& edge : _new_edges) {
     ret.push_back( std::make_tuple(
@@ -166,7 +176,8 @@ std::vector<NetworkMap::EdgeWithEnds> NetworkMap::shake() {
   return ret;
 }
 
-Path NetworkMap::path_to(const Device& dev) const {
+Path NetworkMap::path_to(const Device& dev) {
+  std::lock_guard<std::mutex> lock(_lock);
   Path ret;
 
   // Find the node that corresponds to the referenced Device

@@ -12,7 +12,7 @@
 class Link {
 public:
   static std::shared_ptr<Link>
-    fromPromise(std::shared_ptr<LinkPromise>&&, const NetworkMap& nm);
+    fromPromise(std::shared_ptr<LinkPromise>&&, NetworkMap& nm);
   Link( const std::string&, TransportSocket&&, const std::string&);
   Link( const std::string&, const std::string&
       , uint64_t, bool, TransportSocket&& socket

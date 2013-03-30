@@ -16,7 +16,7 @@
 #include <iostream>
 
 LinkLocalDiscovery::LinkLocalDiscovery(UDPTransport* clients,
-                                       const NetworkMap &nm):
+                                       NetworkMap &nm):
     _clients(clients), _nm(nm), _fd(socket(AF_INET6, SOCK_DGRAM, 0))
 {
   if(_fd == -1)
