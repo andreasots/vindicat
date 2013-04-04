@@ -16,7 +16,7 @@ Connection::Connection(CryptoIdentity& ci, Path path, ConnectionPool& cp, Connec
   , _route_id( bytes( id() ) )
   , _authenticated(false)
   , _request_packet(new std::string)
-  , _packet_queue(new std::vector<std::string>)
+  , _packet_queue(new RingBuffer<std::string, 127>)
   , _nonces(nullptr)
   {
   _request_packet->push_back('\1');
@@ -131,8 +131,12 @@ void Connection::_auth(const std::string& cookie_packet) {
   _authenticated = true;
 
   // also send all the queued packets
-  for ( const std::string& packet : *_packet_queue ) _outgoing(packet);
-  _packet_queue.reset(nullptr);
+  {
+    std::lock_guard<std::mutex> lock(_packet_queue_lock);
+    while(!_packet_queue->empty())
+      _outgoing(_packet_queue->pop());
+    _packet_queue.reset(nullptr);
+  }
   _request_packet.reset(nullptr);
 }
 
@@ -210,9 +214,22 @@ Connection::Connection(nacl25519_nm&& ns, const std::string& their_id
                              , _naclsession.nonce_bit()) )
   {}
 
-bool Connection::connection_forward(const std::string& packet) {
-  if ( ! _authenticated ) _packet_queue->push_back(packet);
-  else _outgoing(packet);
+bool Connection::forward(const std::string& packet) {
+  if (!_authenticated) {
+    std::lock_guard<std::mutex> lock(_packet_queue_lock);
+    // Why check for null pointer:
+    // 1: Thread A calls Connection::forward, _authenticated is false, enters
+    //    this branch
+    // 2: Context switch
+    // 3: Thread B calls Connection::_auth, _authenticated is now true and
+    //    _packet_queue is freed
+    // 4: Context switch
+    // 5: Thread A dereferences a null pointer. Oops.
+    if(_packet_queue)
+      _packet_queue->push(packet);
+  } else {
+    _outgoing(packet);
+  }
   return 1;
 }
 

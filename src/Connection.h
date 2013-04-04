@@ -9,9 +9,10 @@
 #include "nacl25519_nm.h"
 #include "Util.h"
 #include "NonceSession.h"
+#include "RingBuffer.h"
 
 #include <memory>
-#include <vector>
+#include <mutex>
 
 class Connection : public Forwarding {
 public:
@@ -48,7 +49,8 @@ private:
   bool _authenticated;
   // present until authenticated:
   std::unique_ptr< std::string > _request_packet;
-  std::unique_ptr< std::vector<std::string> > _packet_queue;
+  std::unique_ptr<RingBuffer<std::string, 127>> _packet_queue;
+  std::mutex _packet_queue_lock;
   // present after authenticated:
   std::unique_ptr< NonceSession > _nonces;
 };

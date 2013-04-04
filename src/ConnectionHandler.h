@@ -5,7 +5,7 @@
 #include <memory>
 #include <cstdint>
 #include <string>
-#include <vector>
+#include <list>
 
 class Interface;
 
@@ -22,7 +22,7 @@ class ConnectionHandler {
   void operator() (const std::string&, std::uint8_t, const std::string&);
  
  private:
-  std::vector< std::unique_ptr<Interface> > _ifaces;
+  std::list<std::unique_ptr<Interface>> _ifaces;
 };
 
 
