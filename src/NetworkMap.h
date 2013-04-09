@@ -4,6 +4,7 @@
 #include "Transport.h"
 #include "Device.h"
 #include "PrefixMap.h"
+#include "ReadWriteLock.h"
 class Link;
 
 #include <lemon/list_graph.h>
@@ -13,7 +14,6 @@ class Link;
 #include <tuple>
 #include <unordered_map>
 #include <set>
-#include <mutex>
 
 typedef std::vector< std::tuple<
       std::shared_ptr<Link>, std::shared_ptr<Device>
@@ -51,7 +51,7 @@ class NetworkMap {
   // Return the "best" path to the specified Device. Empty if none.
 
  private:
-  std::mutex _lock;
+  ReadWriteLock _lock;
   lemon::ListGraph _graph;
   lemon::ListGraph::NodeMap<std::shared_ptr<Device> > _g_device;
   lemon::ListGraph::EdgeMap<std::shared_ptr<Link> > _g_link;
