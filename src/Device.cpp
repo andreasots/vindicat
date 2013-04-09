@@ -93,12 +93,12 @@ bool Device::open( const std::string& ct
 void Device::addForwarding(std::shared_ptr<ForeignForwarding>&& fwd) {
   DEBUG() << "adding " << std::hex << fwd->id() << std::dec;
   fwd->owner(shared_from_this());
-  std::lock_guard<std::mutex> lock(_forwardings_lock);
+  std::lock_guard<ReadWriteLock::Write> lock(_forwardings_lock.write_lock());
   _forwardings.insert(std::make_pair(fwd->id(), std::move(fwd)));
 }
 
 std::shared_ptr<ForeignForwarding> Device::getForwarding(uint64_t id) {
-  std::lock_guard<std::mutex> lock(_forwardings_lock);
+  std::lock_guard<ReadWriteLock::Read> lock(_forwardings_lock.read_lock());
   auto it = _forwardings.find(id);
   if (it == _forwardings.end() ) return nullptr;
   return it->second;
@@ -106,7 +106,7 @@ std::shared_ptr<ForeignForwarding> Device::getForwarding(uint64_t id) {
 
 void Device::removeForwarding(uint64_t id) {
   DEBUG() << std::hex << id << std::dec;
-  std::lock_guard<std::mutex> lock(_forwardings_lock);
+  std::lock_guard<ReadWriteLock::Write> lock(_forwardings_lock.write_lock());
   _forwardings.erase(id);
 }
 

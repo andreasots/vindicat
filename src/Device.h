@@ -5,12 +5,12 @@ class ForeignForwarding;
 
 #include "Constants.h"
 #include "vindicat.pb.h"
+#include "ReadWriteLock.h"
 
 #include <memory>
 #include <vector>
 #include <string>
 #include <unordered_map>
-#include <mutex>
 
 #include <stdint.h>
 
@@ -56,8 +56,8 @@ private:
   std::vector<std::string> _sig_keys;
 
   std::unordered_map<PkencAlgo, std::string > _enc; // key
-  std::unordered_map<uint64_t, std::shared_ptr<ForeignForwarding> > _forwardings;
-  std::mutex _forwardings_lock;
+  std::unordered_map<uint64_t, std::shared_ptr<ForeignForwarding>> _forwardings;
+  ReadWriteLock _forwardings_lock;
   uint64_t _mtime;
   std::shared_ptr<DeviceBusinesscard> _card;
 };
