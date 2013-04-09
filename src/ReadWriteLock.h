@@ -6,33 +6,65 @@
 
 class ReadWriteLock {
  public:
-  typedef ReadWriteLock Read;
-  typedef std::mutex Write;
+  class Read {
+   public:
+    Read(ReadWriteLock& lock)
+      : _lock(lock) {
+    }
+
+    void lock() {
+      _lock._no_waiting.lock();
+      if(_lock._readers++ == 0)
+        _lock._reading.lock();
+      _lock._no_waiting.unlock();
+    }
+
+    void unlock() {
+      if(--_lock._readers == 0)
+        _lock._reading.unlock();
+    }
+
+   private:
+    ReadWriteLock& _lock;
+  };
+
+  class Write {
+   public:
+    Write(ReadWriteLock& lock)
+      : _lock(lock) {
+    }
+
+    void lock() {
+      _lock._no_waiting.lock();
+      _lock._reading.lock();
+      _lock._no_waiting.unlock();
+    }
+
+    void unlock() {
+      _lock._reading.unlock();
+    }
+
+   private:
+    ReadWriteLock& _lock;
+  };
+
   ReadWriteLock()
-    : _readers(0) {
+    : _readers(0), _read(*this), _write(*this) {
   }
 
   Read& read_lock() {
-    return *this;
+    return _read;
   }
 
   Write& write_lock() {
-    return _write_lock;
-  }
-
-  void lock() {
-    if (++_readers == 1)
-      _write_lock.lock();
-  }
-  
-  void unlock() {
-    if (--_readers == 0)
-      _write_lock.unlock();
+    return _write;
   }
 
  private:
   std::atomic<unsigned> _readers;
-  std::mutex _write_lock;
+  std::mutex _no_waiting, _reading;
+  Read _read;
+  Write _write;
 };
 
 #endif  // READWRITELOCK_H_
