@@ -13,15 +13,15 @@ class ReadWriteLock {
     }
 
     void lock() {
-      _lock._no_waiting.lock();
+      _lock._waiting.lock();
       if(_lock._readers++ == 0)
-        _lock._reading.lock();
-      _lock._no_waiting.unlock();
+        _lock._access.lock();
+      _lock._waiting.unlock();
     }
 
     void unlock() {
       if(--_lock._readers == 0)
-        _lock._reading.unlock();
+        _lock._access.unlock();
     }
 
    private:
@@ -35,13 +35,13 @@ class ReadWriteLock {
     }
 
     void lock() {
-      _lock._no_waiting.lock();
-      _lock._reading.lock();
-      _lock._no_waiting.unlock();
+      _lock._waiting.lock();
+      _lock._access.lock();
+      _lock._waiting.unlock();
     }
 
     void unlock() {
-      _lock._reading.unlock();
+      _lock._access.unlock();
     }
 
    private:
@@ -62,7 +62,7 @@ class ReadWriteLock {
 
  private:
   std::atomic<unsigned> _readers;
-  std::mutex _no_waiting, _reading;
+  std::mutex _waiting, _access;
   Read _read;
   Write _write;
 };
