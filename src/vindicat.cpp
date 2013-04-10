@@ -83,7 +83,11 @@ int main (int argc, char** argv) {
   bcn.enable();
 
   std::unique_ptr<Interface> ctrl(new ControlInterface(nm, ci));
-  ctrl->onPacket(ihn);
+  ctrl->onPacket([&ihn, &threads](std::string&& from, std::string&& packet) {
+        threads.push([&ihn, from, packet]() {
+            ihn(std::string(from), std::string(packet));
+          });
+      });
   ch.addInterface( std::move(ctrl) );
 
   std::unique_ptr<Interface> ipc(new IPCInterface(our_id));

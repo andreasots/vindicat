@@ -12,8 +12,8 @@ InterfaceHandler::InterfaceHandler
 
 void InterfaceHandler::operator()(std::string&& to, std::string&& packet) {
   auto it = _cp.find(to);
-  if (it != _cp.end() ) {
-    it->second->connection_forward(packet);
+  if (it) {
+    it->forward(packet);
   } else {
     {
       auto *logger = new INFO();
