@@ -192,8 +192,8 @@ void Connection::handle_auth(CryptoIdentity& ci, ConnectionHandler& ch, const st
   Forwarding::pair(conn, rfwd);  
 
   auto it = cp.find(their_id);
-  if (it != cp.end())
-    WARNING() << "Already connected" << (it->second->_authenticated? " and authenticated": "");
+  if (it)
+    WARNING() << "Already connected" << (it->_authenticated? " and authenticated": "");
   cp.insert( std::make_pair(their_id, conn) );
   nm.device(ts)->addForwarding(rfwd);
 }  
@@ -214,7 +214,7 @@ Connection::Connection(nacl25519_nm&& ns, const std::string& their_id
                              , _naclsession.nonce_bit()) )
   {}
 
-bool Connection::forward(const std::string& packet) {
+bool Connection::connection_forward(const std::string& packet) {
   if (!_authenticated) {
     std::lock_guard<std::mutex> lock(_packet_queue_lock);
     // Why check for null pointer:
